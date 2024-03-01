@@ -1,0 +1,22 @@
+name: acourtney-fish-octopus
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+dependencies:
+  - conda-forge::python=3.9
+  - conda-forge::ipykernel
+  - pytorch::pytorch
+  - pytorch::torchvision
+  - conda-forge::matplotlib
+  - conda-forge::scipy
+  - conda-forge::napari
+  - conda-forge::pandas
+  - conda-forge::scikit-image
+  - conda-forge::seaborn
+  - conda-forge::dask
+  - conda-forge::cellpose
+  - conda-forge::pip
+  - pip:
+      - imaris-ims-file-reader
+      - ipyfilechooser

@@ -9,7 +9,32 @@ Workflow:
 2. Process the ims files and the regions
 3. Visualize the results and compute statistics.
 
-## Installation
+## Files organization
+- source folder
+    - img1.ims
+    - img2.ims
+    - img3.ims
 
+- destination
+    - filelist.csv (after )
+    - img1-regions.json
+    - 
+    
+## Installation
+```bash
+git clone
+```
+
+```bash
+# install micromamba
+"${SHELL}" <(curl -L micro.mamba.pm/install.sh)
+# reload the shell
+${SHELL}
+# create an environment
+micromamba -qy create -f environment.yml
+# activate the environment 
+micromamba activate acourtney-fish-octopus
+
+```
 
 

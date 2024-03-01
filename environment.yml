@@ -18,6 +18,5 @@ dependencies:
   - conda-forge::dask
   - conda-forge::cellpose
   - conda-forge::pip
-  - pip:
-      - imaris-ims-file-reader
-      - ipyfilechooser
+  - conda-forge::imaris-ims-file-reader
+  - conda-forge::ipyfilechooser

@@ -26,6 +26,7 @@ Workflow:
     
 ## Installation
 
+To create an environment from scratch:
 ```bash
 # install micromamba
 "${SHELL}" <(curl -L micro.mamba.pm/install.sh)

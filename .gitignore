@@ -3,3 +3,4 @@
 *.tif
 Untitled*
 config.yml
+.ipynb_checkpoints

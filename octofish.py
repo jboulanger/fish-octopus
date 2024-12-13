@@ -228,13 +228,16 @@ if __name__ == "__main__":
     dummy_run = False
 
     # get the row to process
-    row = filelist.iloc[index]
-    print(row)
-    if get_files(dstdir, row, "measurements").exists() is False:
-        if get_files(dstdir, row, "regions").exists() is True:
-            model = models.Cellpose(gpu=core.use_gpu(), model_type="nuclei")
-            process_item(row, resolution_level, model, dstdir, crop, dummy_run)
+    if index < len(filelist):
+        row = filelist.iloc[index]
+        print(row)
+        if get_files(dstdir, row, "measurements").exists() is False:
+            if get_files(dstdir, row, "regions").exists() is True:
+                model = models.Cellpose(gpu=core.use_gpu(), model_type="nuclei")
+                process_item(row, resolution_level, model, dstdir, crop, dummy_run)
+            else:
+                print("No measurement file, skip")
         else:
-            print("No measurement file, skip")
+            print("File already processed, skip")
     else:
-        print("File already processed, skip")
+        print("Index -n, out of bound.")

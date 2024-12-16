@@ -1,13 +1,11 @@
 name: acourtney-fish-octopus
 channels:
   - pytorch
-  - nvidia
   - conda-forge
 dependencies:
   - conda-forge::python
   - conda-forge::ipykernel
   - pytorch::pytorch
-  - pytorch-cuda=12.1
   - pytorch::torchvision
   - conda-forge::matplotlib
   - conda-forge::scipy

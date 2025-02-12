@@ -4,17 +4,26 @@ Image analysis pipeline to quantify and spatially localise RNA expression levels
 
 Nuclei are segmented using cellpose with the 'nuclei' pretrained model and the fish signal is quantified using a difference of Gaussian filter.
 
-Workflow on a workstation:
+## Workflow on a workstation:
 1. 1_Scan_folder.ipynb to create a list of files to work with
 2. 2_Select_ROI.ipynb to define regions of interest
 3. 3_Process.ipynb to process all files
 3. 4_Visualization.ipynb to visualize the results and compute statistics.
 
-Remote processing:
-To process file on a HPC system for step 3,
-
-- get the code on the system,
-- edit the script.sh file to match the paths
+## Remote processing:
+### Configuration
+- In a terminal connect to the login node, eg:
+```bash
+ssh hex
+```
+- get the code on the system, eg:
+```bash
+mkdir code
+cd code
+git clone https://github.com/jboulanger/fish-octopus.git
+```
+### Processing files
+- connect to hex via visual code to edit the file script.sh
 - run
 ```bash
 sbatch --array 10 script.sh

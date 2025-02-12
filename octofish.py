@@ -7,6 +7,7 @@ import json
 from imaris_ims_file_reader.ims import ims
 import tifffile
 from scipy import ndimage as ndi
+import napari
 
 
 def get_files(dstdir, row, key=None):
@@ -149,7 +150,7 @@ def process_item(
     channel_idx = [k for k in range(nchannels) if k != nuclear_channel]
 
     # channel names
-    channel_str = [row[f"channel{k+1}"] for k in channel_idx]
+    channel_str = [row[f"channel{k + 1}"] for k in channel_idx]
 
     if dummy_run:
         print(channel_str)

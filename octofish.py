@@ -11,6 +11,21 @@ import napari
 
 
 def get_files(dstdir, row, key=None):
+    """Get files from the project basd on a key or return a dictionary
+
+    Parameters
+    ----------
+    dstdir: Path
+        path to the destination/result folder
+    row: pd.Series
+        contains the name of the file row["name]
+    key: string | None
+        string ims, regions, labels, measurements or log
+
+    Returns
+    -------
+    dict | Path: dicionary or path to the files
+    """
     if key == "ims":
         return Path(row["folder"]) / row["name"]
     elif key == "regions":
@@ -40,8 +55,8 @@ def load_regions_as_labels(dstdir: Path, row: pd.Series, shape, resolution_level
     shape : List
     resolution_level: int
 
-    Result
-    ------
+    Returns
+    -------
     rois: numnpy.ndarray
         labels image
     """
@@ -51,6 +66,7 @@ def load_regions_as_labels(dstdir: Path, row: pd.Series, shape, resolution_level
 
     c = pow(2, poly["resolution_level"] - resolution_level)
     sdata = [c * np.array(p) for p in poly["regions"]]
+    
     rois2d = napari.layers.Shapes(sdata, shape_type="polygon").to_labels(
         labels_shape=[shape[1], shape[2]]
     )
@@ -63,12 +79,13 @@ def load_regions_as_labels(dstdir: Path, row: pd.Series, shape, resolution_level
 def preprocess(img):
     """Preprocess the image before FISH intensity measurement
 
-    Parameter
-    ---------
+    Parameters
+    ----------
     img : numpy.ndarray
         input image
-    Result
-    ------
+
+    Returns
+    -------
     numpy.ndarray
         result
     """
@@ -87,8 +104,24 @@ def preprocess(img):
 
 
 def record_intensity(labels, score, rois, channel_str):
-    """
-    Measure mean intensities in labels for each channels in score.
+    """Measure mean intensities in labels for each channels in score.
+
+    Parameters
+    ----------
+    labels : numpy.ndarray
+        labels image for the nuclei
+    score : numpy.ndarray
+        intensity image
+    roi: numpy.ndarray
+        labels image for the predefined regions
+    channel_str: List
+        channel names
+
+    Returns
+    -------
+    pandas.DataFrame
+        measurements
+
     """
     z, y, x = np.meshgrid(*[np.arange(n) for n in labels.shape], indexing="ij")
     dst = []
@@ -123,6 +156,26 @@ def process_item(
     """Process a line of the input filelist
 
     Segment the nuclei and measure the FISH signal
+
+    Parameters
+    ----------
+    row : pandas.Series
+        row of the filelist
+    resolution_level : int
+        resolution level
+    model : cellpose.models.Cellpose
+        cellpose model (nuclei)
+    dstdir : pathlib.Path
+        destination folder
+    crop : bool
+        crop the image (as a test)
+    dummy_run : bool
+        Whether to run a dummy test
+
+    Returns
+    -------
+    pandas.DataFrame
+        measurements
     """
 
     # identify the channel with nuclar label
@@ -192,7 +245,7 @@ def process_item(
     return df
 
 
-# if the file is called as a python script
+# if the file is called as a python script, create  a command line parser
 if __name__ == "__main__":
     import argparse
     from cellpose import models, core

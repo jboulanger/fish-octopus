@@ -1,3 +1,5 @@
+"""Quantification of FISH Data in octupus brains"""
+
 from pathlib import Path
 import numpy as np
 import numpy.ma as ma
@@ -7,7 +9,7 @@ import json
 from imaris_ims_file_reader.ims import ims
 import tifffile
 from scipy import ndimage as ndi
-import napari
+from skimage import draw
 
 
 def get_files(dstdir, row, key=None):
@@ -45,15 +47,101 @@ def get_files(dstdir, row, key=None):
         }
 
 
+def load_nuclei_channel_2d(dstdir: Path, row: pd.Series, resolution_level: int):
+    """Load the nuclei channel in 2D
+
+    Parameters
+    ----------
+    dstdir: pathlib.Path
+        destination folder
+    row : pandas.Series
+        row of the filelist with "ims"
+    resolution_level: int
+        Resolution level at which the label image is computed
+
+    Returns
+    -------
+    np.ndarray: image corresponding to the nuclei channel
+
+    """
+    filename = get_files(dstdir, row, "ims")
+    store = ims(filename, ResolutionLevelLock=resolution_level, aszarr=True)
+    img = da.from_zarr(store)
+    nuclei = da.max(img[0, 3], 0).compute().squeeze()
+    return nuclei
+
+
+def save_regions(dstdir: Path, row: pd.Series, resolution_level: int, polygons):
+    poly = {
+        # "shape": nuclei.shape,
+        "resolution_level": resolution_level,
+        "regions": [p.tolist() for p in polygons],
+    }
+
+    regionfile = get_files(dstdir, row, "regions")
+    with open(regionfile, "w") as outfile:
+        json.dump(poly, outfile)
+
+
+def load_region_polygons(dstdir: Path, row: pd.Series, resolution_level: int):
+    """Load regions as labels
+
+    Parameters
+    ----------
+    dstdir: pathlib.Path
+        destination folder
+    row : pandas.Series
+        row of the filelist with "regions"
+    resolution_level: int
+        Resolution level at which the label image is computed
+
+    Returns
+    -------
+    list of numnpy.ndarray
+        polygons
+    """
+
+    regionfile = get_files(dstdir, row, "regions")
+
+    if not regionfile.exists():
+        return None
+
+    # load the region json file
+    with open(regionfile, "r") as outfile:
+        poly = json.load(outfile)
+
+    # get the resolution level of the regions
+    c = pow(2, poly["resolution_level"] - resolution_level)
+
+    # scale the rois to the resolution level
+    sdata = [c * np.array(p) for p in poly["regions"]]
+
+    return sdata
+
+
+def polygon2mask_safe(shape, poly):
+    """polygon2mask with bound checking"""
+    # r = np.maximum(0, np.minimum(shape[0], poly[0]))
+    # c = np.maximum(0, np.minimum(shape[1], poly[1]))
+    r, c = draw.polygon(shape, poly[0], poly[1])
+    img = np.zeros(shape)
+    img[r, c] = 1
+    return img
+
+
 def load_regions_as_labels(dstdir: Path, row: pd.Series, shape, resolution_level: int):
     """Load regions as labels
 
     Parameters
     ----------
     dstdir: pathlib.Path
+        destination folder
     row : pandas.Series
-    shape : List
+        row of the filelist with "regions"
+    shape : shape like
+        List of tuple describing the size of the image (D,H,W)
     resolution_level: int
+        Resolution level at which the label image is computed
 
     Returns
     -------
@@ -61,19 +149,27 @@ def load_regions_as_labels(dstdir: Path, row: pd.Series, shape, resolution_level
         labels image
     """
 
-    with open(get_files(dstdir, row, "regions"), "r") as outfile:
-        poly = json.load(outfile)
+    sdata = load_region_polygons(dstdir, row, resolution_level)
 
-    c = pow(2, poly["resolution_level"] - resolution_level)
-    sdata = [c * np.array(p) for p in poly["regions"]]
-    
-    rois2d = napari.layers.Shapes(sdata, shape_type="polygon").to_labels(
-        labels_shape=[shape[1], shape[2]]
-    )
-    rois = np.zeros(shape)
-    for k in range(shape[0]):
-        rois[k, 0 : rois2d.shape[0], 0 : rois2d.shape[1]] = rois2d
-    return rois
+    if sdata is None:
+        return np.zeros(shape)
+
+    # create a 2d label image from the polygons
+    shape2d = shape if len(shape) == 2 else shape[1:]
+    rois2d = np.zeros(shape2d, np.uint32)
+    for k, p in enumerate(sdata):
+        r, c = draw.polygon(p[:, 0], p[:, 1], shape2d)
+        rois2d[r, c] = k + 1
+        rois2d[np.round(p[0]).astype(int), np.round(p[1]).astype(int)] = k + 1
+
+    if len(shape) == 2:  # 2D case
+        return rois2d
+    else:  # 3D case
+        # expand the ROI along the z slices
+        rois = np.zeros(shape)
+        for k in range(shape[0]):
+            rois[k, 0 : rois2d.shape[0], 0 : rois2d.shape[1]] = rois2d
+        return rois
 
 
 def preprocess(img):
